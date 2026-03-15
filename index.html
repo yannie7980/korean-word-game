@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>韩语单词配对</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    :root {
+      --bg1: #fff7fb;
+      --bg2: #eef7ff;
+      --card: rgba(255,255,255,0.95);
+      --text: #374151;
+      --muted: #7b8794;
+      --pink: #ff8fb1;
+      --pink-deep: #ff6b98;
+      --line: #e8eef6;
+      --ok: #b7f0d8;
+      --ok-text: #2f6b50;
+      --wrong: #fecaca;
+      --wrong-text: #b45309;
+      --shadow: 0 10px 30px rgba(255, 143, 177, 0.15);
+    }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Noto Sans SC", "Malgun Gothic", sans-serif;
+      color: var(--text);
+      background: linear-gradient(180deg, var(--bg1) 0%, var(--bg2) 100%);
+    }
+
+    .app {
+      max-width: 860px;
+      min-height: 100vh;
+      margin: 0 auto;
+      padding: 14px 14px 28px;
+    }
+
+    .panel {
+      background: var(--card);
+      border-radius: 24px;
+      padding: 16px;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(255,255,255,0.82);
+      margin-bottom: 14px;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, #fff0f6 0%, #eef6ff 100%);
+    }
+
+    .top-badges {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+
+    .badge {
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #5b6470;
+      background: rgba(255,255,255,0.92);
+      border: 1px solid rgba(255,255,255,0.88);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 26px;
+      line-height: 1.2;
+    }
+
+    .sub {
+      margin-top: 8px;
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--muted);
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    .stat {
+      border-radius: 18px;
+      padding: 12px 8px;
+      text-align: center;
+      background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(248,250,252,0.95));
+      border: 1px solid var(--line);
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .stat-value {
+      font-size: 20px;
+      font-weight: 800;
+      color: #475569;
+    }
+
+    .progress-wrap {
+      margin-top: 14px;
+    }
+
+    .progress-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .progress {
+      width: 100%;
+      height: 12px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: #f1f5f9;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #ff9cbc, #a5cfff, #bba8ff);
+      transition: width 0.25s ease;
+    }
+
+    .message {
+      margin-top: 14px;
+      border-radius: 18px;
+      padding: 12px 14px;
+      background: linear-gradient(135deg, #fff8fb, #f7fbff);
+      border: 1px solid #f9d7e4;
+      font-size: 14px;
+      line-height: 1.6;
+      min-height: 48px;
+    }
+
+    .search-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .search-grid input {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 12px;
+      font-size: 14px;
+      outline: none;
+      background: #fff;
+    }
+
+    .category-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    button {
+      appearance: none;
+      border: none;
+      border-radius: 18px;
+      padding: 13px 14px;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform 0.15s ease, opacity 0.15s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    button:active { transform: scale(0.98); }
+    button:disabled { cursor: not-allowed; opacity: 0.5; }
+
+    .primary {
+      color: white;
+      background: linear-gradient(135deg, var(--pink), var(--pink-deep));
+      box-shadow: 0 8px 18px rgba(255, 107, 152, 0.22);
+    }
+
+    .secondary {
+      color: #54606f;
+      background: linear-gradient(135deg, #ffffff, #f4f7fb);
+      border: 1px solid var(--line);
+    }
+
+    .accent {
+      color: #4b5563;
+      background: linear-gradient(135deg, #fff8d9, #ffffff);
+      border: 1px solid #fde68a;
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      font-size: 15px;
+      font-weight: 800;
+      color: #556070;
+      gap: 10px;
+    }
+
+    .word-list {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .word-chip {
+      background: linear-gradient(135deg, #fff8fb, #ffffff);
+      border: 1px solid #f7d7e3;
+      border-radius: 14px;
+      padding: 10px 12px;
+      font-size: 13px;
+      color: #667085;
+      line-height: 1.5;
+    }
+
+    .game-columns {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .column {
+      background: linear-gradient(180deg, rgba(255,255,255,0.86), rgba(248,250,252,0.92));
+      border-radius: 18px;
+      padding: 12px;
+      border: 1px solid #edf2f7;
+    }
+
+    .column-title {
+      font-size: 14px;
+      font-weight: 800;
+      color: #5c6675;
+      margin-bottom: 10px;
+    }
+
+    .option-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .option-btn {
+      width: 100%;
+      text-align: left;
+      padding: 12px 12px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #ffffff, #fbfdff);
+      border: 1px solid var(--line);
+      color: #465164;
+      font-size: 14px;
+      font-weight: 700;
+      min-height: 52px;
+    }
+
+    .option-btn.selected {
+      background: linear-gradient(135deg, #fff4f8, #fffdfd);
+      border-color: #f7b6cd;
+      box-shadow: 0 8px 16px rgba(255, 143, 177, 0.12);
+    }
+
+    .option-btn.matched {
+      background: linear-gradient(135deg, #effff7, #ffffff);
+      border-color: var(--ok);
+      color: var(--ok-text);
+      opacity: 0.4;
+    }
+
+    .option-btn.wrong {
+      background: linear-gradient(135deg, #fff5f5, #ffffff);
+      border-color: var(--wrong);
+      color: var(--wrong-text);
+    }
+
+    .empty {
+      padding: 14px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 14px;
+      border: 1px dashed var(--line);
+      border-radius: 16px;
+      background: #fff;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(34,34,34,0.28);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      z-index: 30;
+    }
+
+    .modal-card {
+      width: 100%;
+      max-width: 360px;
+      background: linear-gradient(180deg,#fffdfd,#ffffff);
+      border-radius: 26px;
+      padding: 22px 18px;
+      box-shadow: 0 18px 40px rgba(255,143,177,0.24);
+      text-align: center;
+      border: 1px solid rgba(255,255,255,0.92);
+    }
+
+    @media (max-width: 560px) {
+      .stats { grid-template-columns: repeat(2, 1fr); }
+      .search-grid { grid-template-columns: 1fr; }
+      .category-grid { grid-template-columns: 1fr; }
+      .toolbar { grid-template-columns: 1fr 1fr; }
+      .word-list { grid-template-columns: 1fr; }
+      .game-columns { grid-template-columns: 1fr; }
+      h1 { font-size: 24px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="panel hero">
+      <div class="top-badges">
+        <div class="badge">📱 手机竖屏版</div>
+        <div class="badge">🎀 韩语课堂</div>
+        <div class="badge">☁️ 自动同步</div>
+      </div>
+      <h1>🌷 韩语单词配对</h1>
+      <div class="sub">选择分类，完成配对。</div>
+    </div>
+
+    <div class="panel">
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-label">本组词数</div>
+          <div class="stat-value" id="totalCount">0</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">已完成</div>
+          <div class="stat-value" id="matchedCount">0</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">用时</div>
+          <div class="stat-value" id="timer">00:00</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">分类数</div>
+          <div class="stat-value" id="categoryCount">0</div>
+        </div>
+      </div>
+
+      <div class="progress-wrap">
+        <div class="progress-top">
+          <span>学习进度</span>
+          <span id="progressText">0%</span>
+        </div>
+        <div class="progress">
+          <div class="progress-bar" id="progressBar"></div>
+        </div>
+      </div>
+
+      <div class="message" id="message">加载中…</div>
+
+      <div class="search-grid">
+        <input id="categorySearchInput" type="text" placeholder="搜索分类" />
+        <input id="wordSearchInput" type="text" placeholder="搜索当前组单词" />
+      </div>
+
+      <div id="categoryTabs" class="category-grid"></div>
+
+      <div class="toolbar">
+        <button class="primary" id="restartBtn">重新开始本组</button>
+        <button class="secondary" id="prevGroupBtn">上一组</button>
+        <button class="secondary" id="nextGroupBtn">下一组</button>
+        <button class="accent" id="speakBtn">朗读所选韩语</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="section-title">
+        <span>📚 本组单词</span>
+        <span id="miniStatus">第 1/1 组｜本组 0 词</span>
+      </div>
+      <div class="word-list" id="wordPreview"></div>
+    </div>
+
+    <div class="panel">
+      <div class="section-title">
+        <span>🎓 开始配对</span>
+        <span id="themeName">未选择分类</span>
+      </div>
+      <div class="game-columns">
+        <div class="column">
+          <div class="column-title">韩语</div>
+          <div class="option-list" id="koreanList"></div>
+        </div>
+        <div class="column">
+          <div class="column-title">中文</div>
+          <div class="option-list" id="meaningList"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="winModal" class="modal">
+      <div class="modal-card">
+        <div style="font-size:44px;line-height:1;">🎉</div>
+        <div style="margin-top:10px;font-size:22px;font-weight:800;color:#4b5563;">完成啦</div>
+        <div id="winText" style="margin-top:10px;font-size:14px;line-height:1.65;color:#6b7280;">你完成了一组配对。</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px;">
+          <button id="playAgainBtn" class="primary">再来一次</button>
+          <button id="nextCategoryBtn" class="secondary">下一分类</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRhPu6qC6f03425-R-Rio7xJ0t8RIfMwIg2xPZudEAkCNW5AJjZ2pQJQz6tnAAcrh_J8cDQrqBs3gTX/pub?output=csv";
+    const GROUP_SIZE = 20;
+
+    let WORD_CATEGORIES = {};
+    let currentCategory = "";
+    let activeWords = [];
+    let filteredActiveWords = [];
+    let groupedWords = [];
+    let currentPageIndex = 0;
+    let koreanOptions = [];
+    let meaningOptions = [];
+    let matchedIds = new Set();
+    let selectedKoreanId = null;
+    let selectedMeaningId = null;
+    let secondsElapsed = 0;
+    let timerId = null;
+    let wrongFlash = { korean: null, meaning: null };
+
+    const matchedCountEl = document.getElementById("matchedCount");
+    const totalCountEl = document.getElementById("totalCount");
+    const timerEl = document.getElementById("timer");
+    const progressBarEl = document.getElementById("progressBar");
+    const progressTextEl = document.getElementById("progressText");
+    const messageEl = document.getElementById("message");
+    const miniStatusEl = document.getElementById("miniStatus");
+    const themeNameEl = document.getElementById("themeName");
+    const wordPreviewEl = document.getElementById("wordPreview");
+    const koreanListEl = document.getElementById("koreanList");
+    const meaningListEl = document.getElementById("meaningList");
+    const categoryTabsEl = document.getElementById("categoryTabs");
+    const categoryCountEl = document.getElementById("categoryCount");
+
+    const restartBtn = document.getElementById("restartBtn");
+    const prevGroupBtn = document.getElementById("prevGroupBtn");
+    const nextGroupBtn = document.getElementById("nextGroupBtn");
+    const speakBtn = document.getElementById("speakBtn");
+    const playAgainBtn = document.getElementById("playAgainBtn");
+    const nextCategoryBtn = document.getElementById("nextCategoryBtn");
+    const winModal = document.getElementById("winModal");
+    const winText = document.getElementById("winText");
+
+    const categorySearchInput = document.getElementById("categorySearchInput");
+    const wordSearchInput = document.getElementById("wordSearchInput");
+
+    function setMessage(text) {
+      messageEl.textContent = text;
+    }
+
+    function shuffle(arr) {
+      const copy = [...arr];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    function formatTime(totalSeconds) {
+      const m = String(Math.floor(totalSeconds / 60)).padStart(2, "0");
+      const s = String(totalSeconds % 60).padStart(2, "0");
+      return `${m}:${s}`;
+    }
+
+    function startTimer() {
+      stopTimer();
+      timerId = setInterval(() => {
+        secondsElapsed += 1;
+        timerEl.textContent = formatTime(secondsElapsed);
+      }, 1000);
+    }
+
+    function stopTimer() {
+      if (timerId) {
+        clearInterval(timerId);
+        timerId = null;
+      }
+    }
+
+    function splitCSVLine(line) {
+      const result = [];
+      let current = "";
+      let insideQuotes = false;
+
+      for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+
+        if (ch === '"') {
+          if (insideQuotes && line[i + 1] === '"') {
+            current += '"';
+            i++;
+          } else {
+            insideQuotes = !insideQuotes;
+          }
+        } else if (ch === "," && !insideQuotes) {
+          result.push(current);
+          current = "";
+        } else {
+          current += ch;
+        }
+      }
+
+      result.push(current);
+      return result.map(v => v.trim());
+    }
+
+    async function loadSheet() {
+      try {
+        setMessage("正在读取词表…");
+        const res = await fetch(SHEET_URL);
+        const text = await res.text();
+
+        const lines = text
+          .split(/\r?\n/)
+          .map(v => v.trim())
+          .filter(Boolean);
+
+        if (lines.length <= 1) {
+          setMessage("词表为空。");
+          return;
+        }
+
+        const header = splitCSVLine(lines[0]).map(v => v.toLowerCase());
+        const categoryIndex = header.indexOf("category");
+        const koreanIndex = header.indexOf("korean");
+        const chineseIndex = header.indexOf("chinese");
+
+        if (categoryIndex === -1 || koreanIndex === -1 || chineseIndex === -1) {
+          setMessage("表头必须包含 category / korean / chinese。");
+          return;
+        }
+
+        const categories = {};
+
+        for (let i = 1; i < lines.length; i++) {
+          const cols = splitCSVLine(lines[i]);
+          const category = cols[categoryIndex];
+          const korean = cols[koreanIndex];
+          const chinese = cols[chineseIndex];
+
+          if (!category || !korean || !chinese) continue;
+
+          if (!categories[category]) {
+            categories[category] = [];
+          }
+
+          categories[category].push({
+            id: categories[category].length + 1,
+            korean,
+            meaning: chinese
+          });
+        }
+
+        WORD_CATEGORIES = categories;
+        categoryCountEl.textContent = Object.keys(WORD_CATEGORIES).length;
+
+        const firstCategory = Object.keys(WORD_CATEGORIES)[0];
+        if (!firstCategory) {
+          setMessage("没有可用词表。");
+          return;
+        }
+
+        currentCategory = firstCategory;
+        currentPageIndex = 0;
+        renderCategoryTabs();
+        restartGame();
+      } catch (err) {
+        console.error(err);
+        setMessage("词表读取失败，请检查表格链接和发布设置。");
+      }
+    }
+
+    function splitIntoGroups(items, size) {
+      const groups = [];
+      for (let i = 0; i < items.length; i += size) {
+        groups.push(items.slice(i, i + size));
+      }
+      return groups;
+    }
+
+    function filterCategories(keyword) {
+      const q = keyword.trim().toLowerCase();
+      const allNames = Object.keys(WORD_CATEGORIES);
+
+      if (!q) return allNames;
+
+      return allNames.filter(name => name.toLowerCase().includes(q));
+    }
+
+    function renderCategoryTabs() {
+      const names = filterCategories(categorySearchInput.value);
+      categoryTabsEl.innerHTML = "";
+
+      if (!names.length) {
+        categoryTabsEl.innerHTML = `<div class="empty">没有匹配的分类</div>`;
+        return;
+      }
+
+      names.forEach(category => {
+        const btn = document.createElement("button");
+        btn.className = currentCategory === category ? "primary" : "secondary";
+        btn.textContent = category;
+        btn.addEventListener("click", () => {
+          currentCategory = category;
+          currentPageIndex = 0;
+          wordSearchInput.value = "";
+          restartGame();
+        });
+        categoryTabsEl.appendChild(btn);
+      });
+    }
+
+    function prepareGroup() {
+      const source = WORD_CATEGORIES[currentCategory] || [];
+      groupedWords = splitIntoGroups(source, GROUP_SIZE);
+
+      if (!groupedWords.length) {
+        groupedWords = [[]];
+      }
+
+      if (currentPageIndex >= groupedWords.length) {
+        currentPageIndex = 0;
+      }
+
+      activeWords = groupedWords[currentPageIndex] || [];
+      applyWordFilter();
+    }
+
+    function applyWordFilter() {
+      const q = wordSearchInput.value.trim().toLowerCase();
+
+      if (!q) {
+        filteredActiveWords = [...activeWords];
+      } else {
+        filteredActiveWords = activeWords.filter(item =>
+          item.korean.toLowerCase().includes(q) ||
+          item.meaning.toLowerCase().includes(q)
+        );
+      }
+
+      koreanOptions = shuffle(filteredActiveWords.map(item => ({ id: item.id, text: item.korean })));
+      meaningOptions = shuffle(filteredActiveWords.map(item => ({ id: item.id, text: item.meaning })));
+    }
+
+    function updateGroupButtons() {
+      const totalGroups = groupedWords.length || 1;
+      prevGroupBtn.disabled = currentPageIndex <= 0;
+      nextGroupBtn.disabled = currentPageIndex >= totalGroups - 1;
+    }
+
+    function renderPreview() {
+      wordPreviewEl.innerHTML = "";
+
+      if (!filteredActiveWords.length) {
+        wordPreviewEl.innerHTML = `<div class="empty">当前筛选条件下没有单词</div>`;
+        return;
+      }
+
+      filteredActiveWords.forEach((item, index) => {
+        const div = document.createElement("div");
+        div.className = "word-chip";
+        div.textContent = `${index + 1}. ${item.korean} — ${item.meaning}`;
+        wordPreviewEl.appendChild(div);
+      });
+    }
+
+    function renderOptionList(container, options, type) {
+      container.innerHTML = "";
+
+      if (!options.length) {
+        container.innerHTML = `<div class="empty">没有可显示的内容</div>`;
+        return;
+      }
+
+      options.forEach(option => {
+        const btn = document.createElement("button");
+        btn.className = "option-btn";
+        btn.textContent = option.text;
+
+        if (matchedIds.has(option.id)) btn.classList.add("matched");
+
+        if (
+          (type === "korean" && selectedKoreanId === option.id) ||
+          (type === "meaning" && selectedMeaningId === option.id)
+        ) {
+          btn.classList.add("selected");
+        }
+
+        if (
+          (type === "korean" && wrongFlash.korean === option.id) ||
+          (type === "meaning" && wrongFlash.meaning === option.id)
+        ) {
+          btn.classList.add("wrong");
+        }
+
+        btn.disabled = matchedIds.has(option.id);
+        btn.addEventListener("click", () => handleSelect(type, option.id));
+        container.appendChild(btn);
+      });
+    }
+
+    function renderBoard() {
+      renderOptionList(koreanListEl, koreanOptions, "korean");
+      renderOptionList(meaningListEl, meaningOptions, "meaning");
+    }
+
+    function updatePanel() {
+      const total = filteredActiveWords.length;
+      const done = filteredActiveWords.filter(v => matchedIds.has(v.id)).length;
+      const totalGroups = groupedWords.length || 1;
+
+      totalCountEl.textContent = total;
+      matchedCountEl.textContent = done;
+      timerEl.textContent = formatTime(secondsElapsed);
+
+      const percent = total ? Math.round((done / total) * 100) : 0;
+      progressBarEl.style.width = `${percent}%`;
+      progressTextEl.textContent = `${percent}%`;
+
+      miniStatusEl.textContent = `${currentCategory}｜第 ${currentPageIndex + 1}/${totalGroups} 组｜本组 ${total} 词`;
+      themeNameEl.textContent = currentCategory;
+    }
+
+    function allFilteredMatched() {
+      return filteredActiveWords.every(item => matchedIds.has(item.id));
+    }
+
+    function checkMatch() {
+      if (selectedKoreanId == null || selectedMeaningId == null) return;
+
+      if (selectedKoreanId === selectedMeaningId) {
+        matchedIds.add(selectedKoreanId);
+        setMessage("配对成功。");
+        selectedKoreanId = null;
+        selectedMeaningId = null;
+        updatePanel();
+        renderBoard();
+
+        if (filteredActiveWords.length > 0 && allFilteredMatched()) {
+          stopTimer();
+          const totalGroups = groupedWords.length || 1;
+          winText.textContent = `分类：${currentCategory}｜第 ${currentPageIndex + 1}/${totalGroups} 组｜词数 ${filteredActiveWords.length}｜用时 ${formatTime(secondsElapsed)}`;
+          winModal.style.display = "flex";
+        }
+      } else {
+        wrongFlash = { korean: selectedKoreanId, meaning: selectedMeaningId };
+        setMessage("这两个不是一对。");
+        updatePanel();
+        renderBoard();
+
+        setTimeout(() => {
+          selectedKoreanId = null;
+          selectedMeaningId = null;
+          wrongFlash = { korean: null, meaning: null };
+          renderBoard();
+        }, 600);
+      }
+
+      updatePanel();
+    }
+
+    function handleSelect(type, id) {
+      if (matchedIds.has(id)) return;
+
+      if (type === "korean") {
+        selectedKoreanId = id;
+        const item = filteredActiveWords.find(v => v.id === id) || activeWords.find(v => v.id === id);
+        if (item) setMessage(`已选择：${item.korean}`);
+      } else {
+        selectedMeaningId = id;
+        const item = filteredActiveWords.find(v => v.id === id) || activeWords.find(v => v.id === id);
+        if (item) setMessage(`已选择：${item.meaning}`);
+      }
+
+      renderBoard();
+      checkMatch();
+    }
+
+    function restartGame() {
+      winModal.style.display = "none";
+      matchedIds = new Set();
+      selectedKoreanId = null;
+      selectedMeaningId = null;
+      wrongFlash = { korean: null, meaning: null };
+      secondsElapsed = 0;
+
+      prepareGroup();
+      renderCategoryTabs();
+      renderPreview();
+      updatePanel();
+      updateGroupButtons();
+      renderBoard();
+
+      const totalGroups = groupedWords.length || 1;
+      setMessage(`当前：${currentCategory} 第 ${currentPageIndex + 1}/${totalGroups} 组`);
+      startTimer();
+    }
+
+    function speakSelectedKorean() {
+      if (selectedKoreanId == null) {
+        setMessage("请先选择一个韩语词。");
+        return;
+      }
+
+      const item = activeWords.find(v => v.id === selectedKoreanId);
+      if (!item) return;
+
+      const utterance = new SpeechSynthesisUtterance(item.korean);
+      utterance.lang = "ko-KR";
+      utterance.rate = 0.92;
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(utterance);
+      setMessage(`正在朗读：${item.korean}`);
+    }
+
+    function getNextCategory() {
+      const categories = Object.keys(WORD_CATEGORIES);
+      const index = categories.indexOf(currentCategory);
+      return categories[(index + 1) % categories.length];
+    }
+
+    categorySearchInput.addEventListener("input", () => {
+      renderCategoryTabs();
+    });
+
+    wordSearchInput.addEventListener("input", () => {
+      selectedKoreanId = null;
+      selectedMeaningId = null;
+      wrongFlash = { korean: null, meaning: null };
+      applyWordFilter();
+      renderPreview();
+      updatePanel();
+      renderBoard();
+    });
+
+    restartBtn.addEventListener("click", restartGame);
+    prevGroupBtn.addEventListener("click", () => {
+      if (currentPageIndex <= 0) return;
+      currentPageIndex -= 1;
+      wordSearchInput.value = "";
+      restartGame();
+    });
+
+    nextGroupBtn.addEventListener("click", () => {
+      if (currentPageIndex >= groupedWords.length - 1) return;
+      currentPageIndex += 1;
+      wordSearchInput.value = "";
+      restartGame();
+    });
+
+    speakBtn.addEventListener("click", speakSelectedKorean);
+    playAgainBtn.addEventListener("click", restartGame);
+
+    nextCategoryBtn.addEventListener("click", () => {
+      currentCategory = getNextCategory();
+      currentPageIndex = 0;
+      wordSearchInput.value = "";
+      restartGame();
+    });
+
+    winModal.addEventListener("click", (e) => {
+      if (e.target === winModal) {
+        winModal.style.display = "none";
+      }
+    });
+
+    loadSheet();
+  </script>
+</body>
+</html>
