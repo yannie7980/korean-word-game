@@ -31,7 +31,7 @@
     }
 
     .app {
-      max-width: 860px;
+      max-width: 900px;
       min-height: 100vh;
       margin: 0 auto;
       padding: 14px 14px 28px;
@@ -82,7 +82,7 @@
 
     .stats {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(3, 1fr);
       gap: 10px;
     }
 
@@ -144,23 +144,6 @@
       font-size: 14px;
       line-height: 1.6;
       min-height: 48px;
-    }
-
-    .search-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-top: 14px;
-    }
-
-    .search-grid input {
-      width: 100%;
-      border: 1px solid var(--line);
-      border-radius: 16px;
-      padding: 12px;
-      font-size: 14px;
-      outline: none;
-      background: #fff;
     }
 
     .category-grid {
@@ -238,10 +221,30 @@
       line-height: 1.5;
     }
 
+    .center-actions {
+      display: flex;
+      justify-content: center;
+      margin-top: 6px;
+    }
+
+    .screen {
+      display: none;
+    }
+
+    .screen.active {
+      display: block;
+    }
+
+    .game-scroll {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
     .game-columns {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 12px;
+      min-width: 560px;
     }
 
     .column {
@@ -274,6 +277,7 @@
       font-size: 14px;
       font-weight: 700;
       min-height: 52px;
+      word-break: break-word;
     }
 
     .option-btn.selected {
@@ -327,14 +331,37 @@
       border: 1px solid rgba(255,255,255,0.92);
     }
 
+    @media (max-width: 700px) {
+      .toolbar {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
     @media (max-width: 560px) {
-      .stats { grid-template-columns: repeat(2, 1fr); }
-      .search-grid { grid-template-columns: 1fr; }
-      .category-grid { grid-template-columns: 1fr; }
-      .toolbar { grid-template-columns: 1fr 1fr; }
-      .word-list { grid-template-columns: 1fr; }
-      .game-columns { grid-template-columns: 1fr; }
-      h1 { font-size: 24px; }
+      .stats {
+        grid-template-columns: repeat(3, 1fr);
+      }
+      .category-grid {
+        grid-template-columns: 1fr;
+      }
+      .word-list {
+        grid-template-columns: 1fr;
+      }
+      h1 {
+        font-size: 24px;
+      }
+      .option-btn {
+        font-size: 13px;
+        min-height: 50px;
+        padding: 10px 10px;
+      }
+      .game-columns {
+        min-width: 520px;
+        gap: 10px;
+      }
+      .column {
+        padding: 10px;
+      }
     }
   </style>
 </head>
@@ -347,7 +374,7 @@
         <div class="badge">☁️ 自动同步</div>
       </div>
       <h1>🌷 韩语单词配对</h1>
-      <div class="sub">选择分类，完成配对。</div>
+      <div class="sub">先复习本组单词，再进入练习。</div>
     </div>
 
     <div class="panel">
@@ -364,10 +391,6 @@
           <div class="stat-label">用时</div>
           <div class="stat-value" id="timer">00:00</div>
         </div>
-        <div class="stat">
-          <div class="stat-label">分类数</div>
-          <div class="stat-value" id="categoryCount">0</div>
-        </div>
       </div>
 
       <div class="progress-wrap">
@@ -380,12 +403,7 @@
         </div>
       </div>
 
-      <div class="message" id="message">加载中…</div>
-
-      <div class="search-grid">
-        <input id="categorySearchInput" type="text" placeholder="搜索分类" />
-        <input id="wordSearchInput" type="text" placeholder="搜索当前组单词" />
-      </div>
+      <div class="message" id="message">请选择分类。</div>
 
       <div id="categoryTabs" class="category-grid"></div>
 
@@ -397,27 +415,39 @@
       </div>
     </div>
 
-    <div class="panel">
-      <div class="section-title">
-        <span>📚 本组单词</span>
-        <span id="miniStatus">第 1/1 组｜本组 0 词</span>
+    <div id="studyScreen" class="screen active">
+      <div class="panel">
+        <div class="section-title">
+          <span>📚 单词预览</span>
+          <span id="miniStatus">第 1/1 组｜本组 0 词</span>
+        </div>
+        <div class="word-list" id="wordPreview"></div>
+        <div class="center-actions">
+          <button class="primary" id="startPracticeBtn">复习结束，开始练习</button>
+        </div>
       </div>
-      <div class="word-list" id="wordPreview"></div>
     </div>
 
-    <div class="panel">
-      <div class="section-title">
-        <span>🎓 开始配对</span>
-        <span id="themeName">未选择分类</span>
-      </div>
-      <div class="game-columns">
-        <div class="column">
-          <div class="column-title">韩语</div>
-          <div class="option-list" id="koreanList"></div>
+    <div id="practiceScreen" class="screen">
+      <div class="panel">
+        <div class="section-title">
+          <span>🎓 开始配对</span>
+          <span id="themeName">未选择分类</span>
         </div>
-        <div class="column">
-          <div class="column-title">中文</div>
-          <div class="option-list" id="meaningList"></div>
+        <div class="center-actions" style="margin-bottom:12px;">
+          <button class="secondary" id="backToStudyBtn">返回单词预览</button>
+        </div>
+        <div class="game-scroll">
+          <div class="game-columns">
+            <div class="column">
+              <div class="column-title">韩语</div>
+              <div class="option-list" id="koreanList"></div>
+            </div>
+            <div class="column">
+              <div class="column-title">中文</div>
+              <div class="option-list" id="meaningList"></div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -442,7 +472,6 @@
     let WORD_CATEGORIES = {};
     let currentCategory = "";
     let activeWords = [];
-    let filteredActiveWords = [];
     let groupedWords = [];
     let currentPageIndex = 0;
     let koreanOptions = [];
@@ -466,7 +495,6 @@
     const koreanListEl = document.getElementById("koreanList");
     const meaningListEl = document.getElementById("meaningList");
     const categoryTabsEl = document.getElementById("categoryTabs");
-    const categoryCountEl = document.getElementById("categoryCount");
 
     const restartBtn = document.getElementById("restartBtn");
     const prevGroupBtn = document.getElementById("prevGroupBtn");
@@ -477,8 +505,22 @@
     const winModal = document.getElementById("winModal");
     const winText = document.getElementById("winText");
 
-    const categorySearchInput = document.getElementById("categorySearchInput");
-    const wordSearchInput = document.getElementById("wordSearchInput");
+    const studyScreen = document.getElementById("studyScreen");
+    const practiceScreen = document.getElementById("practiceScreen");
+    const startPracticeBtn = document.getElementById("startPracticeBtn");
+    const backToStudyBtn = document.getElementById("backToStudyBtn");
+
+    function showStudyScreen() {
+      studyScreen.classList.add("active");
+      practiceScreen.classList.remove("active");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function showPracticeScreen() {
+      studyScreen.classList.remove("active");
+      practiceScreen.classList.add("active");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
 
     function setMessage(text) {
       messageEl.textContent = text;
@@ -521,7 +563,6 @@
 
       for (let i = 0; i < line.length; i++) {
         const ch = line[i];
-
         if (ch === '"') {
           if (insideQuotes && line[i + 1] === '"') {
             current += '"';
@@ -589,7 +630,6 @@
         }
 
         WORD_CATEGORIES = categories;
-        categoryCountEl.textContent = Object.keys(WORD_CATEGORIES).length;
 
         const firstCategory = Object.keys(WORD_CATEGORIES)[0];
         if (!firstCategory) {
@@ -615,21 +655,12 @@
       return groups;
     }
 
-    function filterCategories(keyword) {
-      const q = keyword.trim().toLowerCase();
-      const allNames = Object.keys(WORD_CATEGORIES);
-
-      if (!q) return allNames;
-
-      return allNames.filter(name => name.toLowerCase().includes(q));
-    }
-
     function renderCategoryTabs() {
-      const names = filterCategories(categorySearchInput.value);
       categoryTabsEl.innerHTML = "";
 
+      const names = Object.keys(WORD_CATEGORIES);
       if (!names.length) {
-        categoryTabsEl.innerHTML = `<div class="empty">没有匹配的分类</div>`;
+        categoryTabsEl.innerHTML = `<div class="empty">没有可用分类</div>`;
         return;
       }
 
@@ -640,7 +671,6 @@
         btn.addEventListener("click", () => {
           currentCategory = category;
           currentPageIndex = 0;
-          wordSearchInput.value = "";
           restartGame();
         });
         categoryTabsEl.appendChild(btn);
@@ -660,23 +690,8 @@
       }
 
       activeWords = groupedWords[currentPageIndex] || [];
-      applyWordFilter();
-    }
-
-    function applyWordFilter() {
-      const q = wordSearchInput.value.trim().toLowerCase();
-
-      if (!q) {
-        filteredActiveWords = [...activeWords];
-      } else {
-        filteredActiveWords = activeWords.filter(item =>
-          item.korean.toLowerCase().includes(q) ||
-          item.meaning.toLowerCase().includes(q)
-        );
-      }
-
-      koreanOptions = shuffle(filteredActiveWords.map(item => ({ id: item.id, text: item.korean })));
-      meaningOptions = shuffle(filteredActiveWords.map(item => ({ id: item.id, text: item.meaning })));
+      koreanOptions = shuffle(activeWords.map(item => ({ id: item.id, text: item.korean })));
+      meaningOptions = shuffle(activeWords.map(item => ({ id: item.id, text: item.meaning })));
     }
 
     function updateGroupButtons() {
@@ -688,12 +703,12 @@
     function renderPreview() {
       wordPreviewEl.innerHTML = "";
 
-      if (!filteredActiveWords.length) {
-        wordPreviewEl.innerHTML = `<div class="empty">当前筛选条件下没有单词</div>`;
+      if (!activeWords.length) {
+        wordPreviewEl.innerHTML = `<div class="empty">本组没有单词</div>`;
         return;
       }
 
-      filteredActiveWords.forEach((item, index) => {
+      activeWords.forEach((item, index) => {
         const div = document.createElement("div");
         div.className = "word-chip";
         div.textContent = `${index + 1}. ${item.korean} — ${item.meaning}`;
@@ -742,8 +757,8 @@
     }
 
     function updatePanel() {
-      const total = filteredActiveWords.length;
-      const done = filteredActiveWords.filter(v => matchedIds.has(v.id)).length;
+      const total = activeWords.length;
+      const done = activeWords.filter(v => matchedIds.has(v.id)).length;
       const totalGroups = groupedWords.length || 1;
 
       totalCountEl.textContent = total;
@@ -758,8 +773,8 @@
       themeNameEl.textContent = currentCategory;
     }
 
-    function allFilteredMatched() {
-      return filteredActiveWords.every(item => matchedIds.has(item.id));
+    function allMatched() {
+      return activeWords.every(item => matchedIds.has(item.id));
     }
 
     function checkMatch() {
@@ -773,10 +788,10 @@
         updatePanel();
         renderBoard();
 
-        if (filteredActiveWords.length > 0 && allFilteredMatched()) {
+        if (activeWords.length > 0 && allMatched()) {
           stopTimer();
           const totalGroups = groupedWords.length || 1;
-          winText.textContent = `分类：${currentCategory}｜第 ${currentPageIndex + 1}/${totalGroups} 组｜词数 ${filteredActiveWords.length}｜用时 ${formatTime(secondsElapsed)}`;
+          winText.textContent = `分类：${currentCategory}｜第 ${currentPageIndex + 1}/${totalGroups} 组｜词数 ${activeWords.length}｜用时 ${formatTime(secondsElapsed)}`;
           winModal.style.display = "flex";
         }
       } else {
@@ -801,11 +816,11 @@
 
       if (type === "korean") {
         selectedKoreanId = id;
-        const item = filteredActiveWords.find(v => v.id === id) || activeWords.find(v => v.id === id);
+        const item = activeWords.find(v => v.id === id);
         if (item) setMessage(`已选择：${item.korean}`);
       } else {
         selectedMeaningId = id;
-        const item = filteredActiveWords.find(v => v.id === id) || activeWords.find(v => v.id === id);
+        const item = activeWords.find(v => v.id === id);
         if (item) setMessage(`已选择：${item.meaning}`);
       }
 
@@ -827,6 +842,7 @@
       updatePanel();
       updateGroupButtons();
       renderBoard();
+      showStudyScreen();
 
       const totalGroups = groupedWords.length || 1;
       setMessage(`当前：${currentCategory} 第 ${currentPageIndex + 1}/${totalGroups} 组`);
@@ -856,42 +872,37 @@
       return categories[(index + 1) % categories.length];
     }
 
-    categorySearchInput.addEventListener("input", () => {
-      renderCategoryTabs();
-    });
-
-    wordSearchInput.addEventListener("input", () => {
-      selectedKoreanId = null;
-      selectedMeaningId = null;
-      wrongFlash = { korean: null, meaning: null };
-      applyWordFilter();
-      renderPreview();
-      updatePanel();
-      renderBoard();
-    });
-
     restartBtn.addEventListener("click", restartGame);
+
     prevGroupBtn.addEventListener("click", () => {
       if (currentPageIndex <= 0) return;
       currentPageIndex -= 1;
-      wordSearchInput.value = "";
       restartGame();
     });
 
     nextGroupBtn.addEventListener("click", () => {
       if (currentPageIndex >= groupedWords.length - 1) return;
       currentPageIndex += 1;
-      wordSearchInput.value = "";
       restartGame();
     });
 
     speakBtn.addEventListener("click", speakSelectedKorean);
+
+    startPracticeBtn.addEventListener("click", () => {
+      showPracticeScreen();
+      setMessage("请开始配对。");
+    });
+
+    backToStudyBtn.addEventListener("click", () => {
+      showStudyScreen();
+      setMessage("可以继续复习本组单词。");
+    });
+
     playAgainBtn.addEventListener("click", restartGame);
 
     nextCategoryBtn.addEventListener("click", () => {
       currentCategory = getNextCategory();
       currentPageIndex = 0;
-      wordSearchInput.value = "";
       restartGame();
     });
 
