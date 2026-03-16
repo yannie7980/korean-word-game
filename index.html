@@ -388,7 +388,7 @@
           <div class="stat-value" id="matchedCount">0</div>
         </div>
         <div class="stat">
-          <div class="stat-label">用时</div>
+          <div class="stat-label">本课总用时</div>
           <div class="stat-value" id="timer">00:00</div>
         </div>
       </div>
@@ -456,10 +456,10 @@
       <div class="modal-card">
         <div style="font-size:44px;line-height:1;">🎉</div>
         <div style="margin-top:10px;font-size:22px;font-weight:800;color:#4b5563;">完成啦</div>
-        <div id="winText" style="margin-top:10px;font-size:14px;line-height:1.65;color:#6b7280;">你完成了一组配对。</div>
+        <div id="winText" style="margin-top:10px;font-size:14px;line-height:1.65;color:#6b7280;">你完成了一课配对。</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px;">
           <button id="playAgainBtn" class="primary">再来一次</button>
-          <button id="nextCategoryBtn" class="secondary">下一分类</button>
+          <button id="nextCategoryBtn" class="secondary">下一课/下一分类</button>
         </div>
       </div>
     </div>
@@ -482,6 +482,10 @@
     let secondsElapsed = 0;
     let timerId = null;
     let wrongFlash = { korean: null, meaning: null };
+    let practiceStarted = false;
+    let lessonTotalSeconds = 0;
+    let currentLessonKey = "";
+    let autoNextTimeout = null;
 
     const matchedCountEl = document.getElementById("matchedCount");
     const totalCountEl = document.getElementById("totalCount");
@@ -545,7 +549,7 @@
       stopTimer();
       timerId = setInterval(() => {
         secondsElapsed += 1;
-        timerEl.textContent = formatTime(secondsElapsed);
+        timerEl.textContent = formatTime(lessonTotalSeconds + secondsElapsed);
       }, 1000);
     }
 
@@ -580,6 +584,28 @@
 
       result.push(current);
       return result.map(v => v.trim());
+    }
+
+    function getLessonKey(categoryName) {
+      const parts = categoryName.split("-");
+      if (parts.length >= 2) {
+        return `${parts[0]}-${parts[1]}`;
+      }
+      return categoryName;
+    }
+
+    function getCategoriesInSameLesson(categoryName) {
+      const lessonKey = getLessonKey(categoryName);
+      return Object.keys(WORD_CATEGORIES).filter(name => getLessonKey(name) === lessonKey);
+    }
+
+    function getNextCategoryInLesson(categoryName) {
+      const lessonCategories = getCategoriesInSameLesson(categoryName);
+      const currentIndex = lessonCategories.indexOf(categoryName);
+      if (currentIndex >= 0 && currentIndex < lessonCategories.length - 1) {
+        return lessonCategories[currentIndex + 1];
+      }
+      return null;
     }
 
     async function loadSheet() {
@@ -639,6 +665,9 @@
 
         currentCategory = firstCategory;
         currentPageIndex = 0;
+        currentLessonKey = getLessonKey(currentCategory);
+        lessonTotalSeconds = 0;
+
         renderCategoryTabs();
         restartGame();
       } catch (err) {
@@ -669,8 +698,13 @@
         btn.className = currentCategory === category ? "primary" : "secondary";
         btn.textContent = category;
         btn.addEventListener("click", () => {
+          const nextLessonKey = getLessonKey(category);
+          if (nextLessonKey !== currentLessonKey) {
+            lessonTotalSeconds = 0;
+          }
           currentCategory = category;
           currentPageIndex = 0;
+          currentLessonKey = getLessonKey(currentCategory);
           restartGame();
         });
         categoryTabsEl.appendChild(btn);
@@ -763,7 +797,7 @@
 
       totalCountEl.textContent = total;
       matchedCountEl.textContent = done;
-      timerEl.textContent = formatTime(secondsElapsed);
+      timerEl.textContent = formatTime(lessonTotalSeconds + secondsElapsed);
 
       const percent = total ? Math.round((done / total) * 100) : 0;
       progressBarEl.style.width = `${percent}%`;
@@ -790,9 +824,34 @@
 
         if (activeWords.length > 0 && allMatched()) {
           stopTimer();
+          lessonTotalSeconds += secondsElapsed;
+          secondsElapsed = 0;
+          updatePanel();
+
           const totalGroups = groupedWords.length || 1;
-          winText.textContent = `分类：${currentCategory}｜第 ${currentPageIndex + 1}/${totalGroups} 组｜词数 ${activeWords.length}｜用时 ${formatTime(secondsElapsed)}`;
-          winModal.style.display = "flex";
+          const isLastGroupInCategory = currentPageIndex >= totalGroups - 1;
+
+          if (!isLastGroupInCategory) {
+            setMessage("本组完成，2秒后自动进入下一组。");
+            autoNextTimeout = setTimeout(() => {
+              currentPageIndex += 1;
+              restartGame();
+            }, 2000);
+          } else {
+            const nextCategory = getNextCategoryInLesson(currentCategory);
+
+            if (nextCategory) {
+              setMessage("当前类别完成，2秒后自动进入下一个类别。");
+              autoNextTimeout = setTimeout(() => {
+                currentCategory = nextCategory;
+                currentPageIndex = 0;
+                restartGame();
+              }, 2000);
+            } else {
+              winText.textContent = `本课全部完成｜${currentLessonKey}｜总练习时间 ${formatTime(lessonTotalSeconds)}`;
+              winModal.style.display = "flex";
+            }
+          }
         }
       } else {
         wrongFlash = { korean: selectedKoreanId, meaning: selectedMeaningId };
@@ -830,11 +889,21 @@
 
     function restartGame() {
       winModal.style.display = "none";
+
+      if (autoNextTimeout) {
+        clearTimeout(autoNextTimeout);
+        autoNextTimeout = null;
+      }
+
       matchedIds = new Set();
       selectedKoreanId = null;
       selectedMeaningId = null;
       wrongFlash = { korean: null, meaning: null };
       secondsElapsed = 0;
+      practiceStarted = false;
+      stopTimer();
+
+      currentLessonKey = getLessonKey(currentCategory);
 
       prepareGroup();
       renderCategoryTabs();
@@ -846,7 +915,6 @@
 
       const totalGroups = groupedWords.length || 1;
       setMessage(`当前：${currentCategory} 第 ${currentPageIndex + 1}/${totalGroups} 组`);
-      startTimer();
     }
 
     function speakSelectedKorean() {
@@ -890,19 +958,37 @@
 
     startPracticeBtn.addEventListener("click", () => {
       showPracticeScreen();
+      if (!practiceStarted) {
+        practiceStarted = true;
+        startTimer();
+      }
       setMessage("请开始配对。");
     });
 
     backToStudyBtn.addEventListener("click", () => {
       showStudyScreen();
+      stopTimer();
+      practiceStarted = false;
       setMessage("可以继续复习本组单词。");
     });
 
-    playAgainBtn.addEventListener("click", restartGame);
+    playAgainBtn.addEventListener("click", () => {
+      lessonTotalSeconds = 0;
+      currentPageIndex = 0;
+      restartGame();
+    });
 
     nextCategoryBtn.addEventListener("click", () => {
-      currentCategory = getNextCategory();
+      const nextCategory = getNextCategory();
+      const nextLessonKey = getLessonKey(nextCategory);
+
+      if (nextLessonKey !== currentLessonKey) {
+        lessonTotalSeconds = 0;
+      }
+
+      currentCategory = nextCategory;
       currentPageIndex = 0;
+      currentLessonKey = getLessonKey(currentCategory);
       restartGame();
     });
 
